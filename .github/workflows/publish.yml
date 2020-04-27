@@ -5,23 +5,35 @@ jobs:
   build_and_publish:
     name: 'build_and_publish'
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        canvas_lms_release: ["release/2020-04-25.05"]
 
     steps:
       - name: 'Checkout'
         uses: actions/checkout@v2
 
-      - name: 'Download and build canvas-ltm image from release'
-        run: |
-          wget https://github.com/instructure/canvas-lms/archive/release/2020-04-25.05.zip
-          unzip -q 2020-04-25.05.zip
-          cd canvas-lms-release-2020-04-25.05
-          docker build -f Dockerfile -t gracepoint/canvas-lms:release .
+      - name: 'Checkout canvas-ltm from release'
+        uses: actions/checkout@v2
+        with:
+          repository: instructure/canvas-lms
+          ref: ${{ matrix.canvas_lms_release }}
+          path: canvas-lms
+          fetch-depth: 1
 
-      - name: 'Build image with additional configuration for containerized deployment'
+      - name: 'Build canvas-ltm from release'
+        working-directory: canvas-lms
         run: |
-          docker build -f Dockerfile-production -t gracepoint/canvas-lms:some_version .
+          docker build -f Dockerfile -t gracepoint/canvas-lms:base .
+
+      - name: 'Build final image with configuration for containerized deployment'
+        run: |
+          docker build -f Dockerfile-production -t docker.pkg.github.com/GracepointMinistries/canvas-lms-docker/production:${{ matrix.canvas_lms_release }} .
 
       - name: 'Publish'
-        if: github.ref == 'refs/heads/master'
+        # if: github.ref == 'refs/heads/master'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "hello world"
+          echo ${GITHUB_TOKEN} | docker login -u ${GITHUB_ACTOR} --password-stdin docker.pkg.github.com
+          docker push docker.pkg.github.com/GracepointMinistries/canvas-lms-docker/production:${{ matrix.canvas_lms_release }}
