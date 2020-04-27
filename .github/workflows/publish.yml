@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        canvas_lms_release: ["release/2020-04-25.05"]
+        canvas_lms_release: ["2020-04-25.05"]
 
     steps:
       - name: 'Checkout'
@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: instructure/canvas-lms
-          ref: ${{ matrix.canvas_lms_release }}
+          ref: release/${{ matrix.canvas_lms_release }}
           path: canvas-lms
           fetch-depth: 1
 
