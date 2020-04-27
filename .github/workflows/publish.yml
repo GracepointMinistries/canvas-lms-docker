@@ -13,7 +13,7 @@ jobs:
       - name: 'Download and build canvas-ltm image from release'
         run: |
           wget https://github.com/instructure/canvas-lms/archive/release/2020-04-25.05.zip
-          unzip 2020-04-25.05.zip
+          unzip -q 2020-04-25.05.zip
           cd canvas-lms-release-2020-04-25.05
           docker build -f Dockerfile -t gracepoint/canvas-lms:release .
 
