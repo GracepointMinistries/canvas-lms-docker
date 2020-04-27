@@ -1,0 +1,14 @@
+FROM gracepoint/canvas-lms:release
+
+# Add custom configuration to base image to make image container-friendly
+COPY --chown=docker:docker config/amazon_s3.yml            ${APP_HOME}config/
+COPY --chown=docker:docker config/cache_store.yml          ${APP_HOME}config/
+COPY --chown=docker:docker config/database.yml             ${APP_HOME}config/
+COPY --chown=docker:docker config/delayed_jobs.yml         ${APP_HOME}config/
+COPY --chown=docker:docker config/domain.yml               ${APP_HOME}config/
+COPY --chown=docker:docker config/dynamic_settings.yml     ${APP_HOME}config/
+COPY --chown=docker:docker config/external_migration.yml   ${APP_HOME}config/
+COPY --chown=docker:docker config/file_store.yml           ${APP_HOME}config/
+COPY --chown=docker:docker config/outgoing_mail.yml        ${APP_HOME}config/
+COPY --chown=docker:docker config/redis.yml                ${APP_HOME}config/
+COPY --chown=docker:docker config/security.yml             ${APP_HOME}config/

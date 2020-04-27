@@ -1,0 +1,27 @@
+name: 'Build and Publish'
+on:
+  - pull_request
+jobs:
+  build_and_publish:
+    name: 'build_and_publish'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v2
+
+      - name: 'Download and build canvas-ltm image from release'
+        run: |
+          wget https://github.com/instructure/canvas-lms/archive/release/2020-04-25.05.zip
+          unzip 2020-04-25.05.zip
+          cd canvas-lms-release-2020-04-25.05
+          docker build -f Dockerfile -t gracepoint/canvas-lms:release .
+
+      - name: 'Build image with additional configuration for containerized deployment'
+        run: |
+          docker build -f Dockerfile-production -t gracepoint/canvas-lms:some_version .
+
+      - name: 'Publish'
+        if: github.ref == 'refs/heads/master'
+        run: |
+          echo "hello world"
