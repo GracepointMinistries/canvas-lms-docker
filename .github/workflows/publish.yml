@@ -22,18 +22,51 @@ jobs:
           fetch-depth: 1
 
       - name: 'Build canvas-ltm from release'
-        working-directory: canvas-lms
         run: |
-          docker build -f Dockerfile -t gracepoint/canvas-lms:base .
+          # Overwrite configuration with container-friendly configuration
+          rm -rf canvas-lms/config
+          cp -r config canvas-lms/config/
 
-      - name: 'Build final image with configuration for containerized deployment'
+          # Build image
+          docker build --squash -f canvas-lms/Dockerfile -t gracepoint/canvas-lms:production canvas-lms
+
+      - name: 'Verify Image'
+        env:
+          CANVAS_LMS_ADMIN_EMAIL: "no-reply@gpmail.org"
+          CANVAS_LMS_ADMIN_PASSWORD: "this_is_not_a_real_password"
+          CANVAS_LMS_ACCOUNT_NAME: "this_is_not_a_real_account"
+          CANVAS_LMS_STATS_COLLECTION: "opt_out"
         run: |
-          docker build -f Dockerfile-production -t docker.pkg.github.com/GracepointMinistries/canvas-lms-docker/production:${{ matrix.canvas_lms_release }} .
+          docker-compose build
 
-      - name: 'Publish'
+          # Setup datastores
+          docker-compose up -d postgres
+          docker-compose up -d redis
+          scripts/tcp_ready_check.sh localhost 5432 # Waiting for Postgres to be ready
+
+          # Seed data
+          docker-compose exec web bundle exec rake db:initial_setup
+
+          # Startup canvas-lms
+          docker-compose up -d web
+
+          # Verify canvas-lms can start up correctly
+          wget --retry-connrefused --waitretry=5 --timeout=5 --tries 20 --quiet --output-document=- localhost:80/health_check
+
+
+      - name: 'Tag and Publish'
         # if: github.ref == 'refs/heads/master'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Replaces dashes with periods in Docker tag name
+          IMAGE_VERSION=$(sed 's/-/./g' <<< ${{ matrix.canvas_lms_release }})
+
+          IMAGE="docker.pkg.github.com/GracepointMinistries/canvas-lms-docker/production:$IMAGE_VERSION"
+
+          # Docker login to Github Packages
           echo ${GITHUB_TOKEN} | docker login -u ${GITHUB_ACTOR} --password-stdin docker.pkg.github.com
-          docker push docker.pkg.github.com/GracepointMinistries/canvas-lms-docker/production:${{ matrix.canvas_lms_release }}
+
+          # Tag and Publish
+          docker tag gracepoint/canvas-lms:production $IMAGE
+          docker push $IMAGE
