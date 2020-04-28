@@ -1,9 +1,9 @@
-name: 'Publish'
+name: 'CI'
 on:
   - pull_request
 jobs:
   publish:
-    name: 'publish'
+    name: 'test_and_publish'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -23,22 +23,15 @@ jobs:
 
       - name: 'Build canvas-ltm from release'
         run: |
-          # Overwrite configuration with container-friendly configuration
-          rm -rf canvas-lms/config
-          cp -r config canvas-lms/config/
-
-          # Enable docker experimental features (so that we can use --squash)
-          echo '{ "experiemental" : true }' > daemon.json
-          sudo mv daemon.json /etc/docker/
-          sudo systemctl restart docker
+          # Add configuration with container-friendly configuration
+          rm -rf canvas-lms/config/*.yml.example
+          cp -r config/. canvas-lms/config/
 
           # Build image
-          docker build --squash -f canvas-lms/Dockerfile -t gracepoint/canvas-lms:production canvas-lms
+          docker build -f canvas-lms/Dockerfile -t gracepoint/canvas-lms:production canvas-lms
 
       - name: 'Verify Image'
         run: |
-          docker-compose build
-
           # Setup datastores
           docker-compose up -d postgres
           docker-compose up -d redis
@@ -61,7 +54,7 @@ jobs:
           # Replaces dashes with periods in Docker tag name
           IMAGE_VERSION=$(sed 's/-/./g' <<< ${{ matrix.canvas_lms_release }})
 
-          IMAGE="docker.pkg.github.com/GracepointMinistries/canvas-lms-docker/production:$IMAGE_VERSION"
+          IMAGE="docker.pkg.github.com/gracepointministries/canvas-lms-docker/production:$IMAGE_VERSION"
 
           # Docker login to Github Packages
           echo ${GITHUB_TOKEN} | docker login -u ${GITHUB_ACTOR} --password-stdin docker.pkg.github.com
@@ -69,3 +62,6 @@ jobs:
           # Tag and Publish
           docker tag gracepoint/canvas-lms:production $IMAGE
           docker push $IMAGE
+
+          # Remove docker config file just in case, for security reasons
+          sudo rm -rf /home/runner/.docker/config.json

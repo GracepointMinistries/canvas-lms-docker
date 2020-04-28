@@ -43,6 +43,8 @@ services:
       POSTGRES_DB: canvas
       POSTGRES_USER: canvas
       POSTGRES_PASSWORD: "password"
+    ports:
+      - "5432:5432"
 
   redis:
     image: redis:5.0.9-alpine
