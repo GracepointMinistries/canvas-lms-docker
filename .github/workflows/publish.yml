@@ -27,6 +27,10 @@ jobs:
           rm -rf canvas-lms/config
           cp -r config canvas-lms/config/
 
+          # Enable docker experimental features (so that we can use --squash)
+          echo '{ "experiemental" : true }' > /etc/docker/daemon.json
+          sudo systemctl restart docker
+
           # Build image
           docker build --squash -f canvas-lms/Dockerfile -t gracepoint/canvas-lms:production canvas-lms
 
@@ -47,7 +51,6 @@ jobs:
 
           # Verify canvas-lms can start up correctly
           wget --retry-connrefused --waitretry=5 --timeout=5 --tries 20 --quiet --output-document=- localhost:80/health_check
-
 
       - name: 'Tag and Publish'
         # if: github.ref == 'refs/heads/master'
