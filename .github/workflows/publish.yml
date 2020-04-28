@@ -1,9 +1,9 @@
-name: 'Build and Publish'
+name: 'Publish'
 on:
   - pull_request
 jobs:
-  build_and_publish:
-    name: 'build_and_publish'
+  publish:
+    name: 'publish'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -28,7 +28,8 @@ jobs:
           cp -r config canvas-lms/config/
 
           # Enable docker experimental features (so that we can use --squash)
-          echo '{ "experiemental" : true }' > /etc/docker/daemon.json
+          echo '{ "experiemental" : true }' > daemon.json
+          sudo mv daemon.json /etc/docker/
           sudo systemctl restart docker
 
           # Build image
