@@ -31,11 +31,6 @@ jobs:
           docker build --squash -f canvas-lms/Dockerfile -t gracepoint/canvas-lms:production canvas-lms
 
       - name: 'Verify Image'
-        env:
-          CANVAS_LMS_ADMIN_EMAIL: "no-reply@gpmail.org"
-          CANVAS_LMS_ADMIN_PASSWORD: "this_is_not_a_real_password"
-          CANVAS_LMS_ACCOUNT_NAME: "this_is_not_a_real_account"
-          CANVAS_LMS_STATS_COLLECTION: "opt_out"
         run: |
           docker-compose build
 
@@ -45,7 +40,7 @@ jobs:
           scripts/tcp_ready_check.sh localhost 5432 # Waiting for Postgres to be ready
 
           # Seed data
-          docker-compose exec web bundle exec rake db:initial_setup
+          docker-compose up db_setup
 
           # Startup canvas-lms
           docker-compose up -d web
