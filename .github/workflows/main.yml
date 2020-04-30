@@ -47,7 +47,7 @@ jobs:
           wget --retry-connrefused --waitretry=5 --timeout=5 --tries 20 --quiet --output-document=- localhost:80/health_check
 
       - name: 'Tag and Publish'
-        # if: github.ref == 'refs/heads/master'
+        if: github.ref == 'refs/heads/master'
         env:
           DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN_KTHAM }}
           DOCKER_HUB_USER: ktham
